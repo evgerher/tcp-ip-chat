@@ -29,8 +29,8 @@ public class Client {
     }
   }
 
-  public void acceptMessage(String msg) {
-    logger.info("USER RECEIVED MESSAGE [{}]", msg);
+  public void acceptMessage(Message msg) {
+    logger.info("USER RECEIVED MESSAGE [{}]", msg.toString());
   }
 
   public static void main(String[] args) {

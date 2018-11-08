@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Message;
+import packets.MessageBuilder;
 import packets.Packet;
 
 public class ClientSocket extends Thread {
@@ -54,12 +55,15 @@ public class ClientSocket extends Thread {
   @Override
   public void run() {
     try {
-
+      Message msg;
       while (!closed) {
         Future<Integer> readResult = channel.read(buffer);
         logger.info("read result code [{}]", readResult.get());
-        String echo = new String(buffer.array()).trim();
-        client.acceptMessage(echo);
+        MessageBuilder mbuilder = new MessageBuilder();
+        mbuilder.acceptBytes(buffer.array());
+        if (mbuilder.isConstructed()) {
+          client.acceptMessage(mbuilder.getMessage());
+        }
         buffer.clear();
       }
     } catch (ExecutionException | InterruptedException e) {
