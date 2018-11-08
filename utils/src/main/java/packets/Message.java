@@ -28,7 +28,7 @@ public class Message {
     } catch (IOException e) {
       logger.error("PANIC");
     }
-    
+
     return null;
   }
 }

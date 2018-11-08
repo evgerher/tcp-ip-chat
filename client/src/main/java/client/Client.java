@@ -1,6 +1,9 @@
+package client;
+
 import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import packets.Message;
 
 public class Client {
   private static final Logger logger = LoggerFactory.getLogger(Client.class);
@@ -16,7 +19,9 @@ public class Client {
     }
   }
 
-  public void sendMessage(String msg) {
+  public void sendMessage(String content) {
+    Message msg = new Message(new String(content).getBytes());
+
     try {
       connection.sendMessage(msg);
     } catch (Exception e) {
