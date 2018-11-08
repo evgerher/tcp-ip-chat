@@ -17,7 +17,7 @@ public class Server {
   public Server() throws IOException, InterruptedException, ExecutionException {
     logger.info("Start initialization of a server");
     server = AsynchronousServerSocketChannel.open();
-    server.bind(new InetSocketAddress("127.0.0.1", 10000));
+    server.bind(new InetSocketAddress("127.0.0.1", 10001));
     logger.info("End initialization of a server");
     Future<AsynchronousSocketChannel> acceptFuture = server.accept();
     worker = acceptFuture.get();
@@ -31,11 +31,10 @@ public class Server {
           break;
         ByteBuffer buffer = ByteBuffer.allocate(32);
         Future<Integer> readResult  = worker.read(buffer);
-
         // perform other computations
 
         readResult.get();
-        logger.info("Read data from user");
+        logger.info("Read data from user [{}]", new String(buffer.array()));
 
         buffer.flip();
         Future<Integer> writeResult = worker.write(buffer);
@@ -43,7 +42,7 @@ public class Server {
         // perform other computations
 
         Integer res = writeResult.get();
-        logger.info("Sent data to user");
+        logger.info("Sent data to user [{}]", new String(buffer.array()));
         if (res == -1)
           break;
         buffer.clear();
