@@ -14,7 +14,6 @@ import packets.Packet;
 
 public class ClientSocket extends Thread {
   private static final Logger logger = LoggerFactory.getLogger(ClientSocket.class);
-  private ByteBuffer buffer = ByteBuffer.allocate(Packet.PACKET_SIZE);
   private Future<Void> connection;
 
   private final Client client;
@@ -36,13 +35,12 @@ public class ClientSocket extends Thread {
     Packet[] packets = msg.getPackets();
 
     for (Packet p: packets) {
-      ByteBuffer buffer = ByteBuffer.wrap(p.toBytes());
-      Future<Integer> writeResult  = channel.write(buffer);
+      ByteBuffer bf = p.toBytes();
+      Future<Integer> writeResult  = channel.write(bf);
 //    for (int i = 0; i < 5; i++) {
 //      logger.info("Hello {}", i);
 //    }
       logger.info("write result code [{}]", writeResult.get());
-      buffer.flip();
     }
   }
 
@@ -55,16 +53,24 @@ public class ClientSocket extends Thread {
   @Override
   public void run() {
     try {
-      Message msg;
+      ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
+      MessageBuilder mbuilder = new MessageBuilder();
       while (!closed) {
-        Future<Integer> readResult = channel.read(buffer);
-        logger.info("read result code [{}]", readResult.get());
-        MessageBuilder mbuilder = new MessageBuilder();
-        mbuilder.acceptBytes(buffer.array());
+        Future<Integer> readResult = channel.read(bf);
+        int size = readResult.get();
+        logger.info("read result code [{}]", size);
+
+        bf.rewind();
+        byte[] buf = new byte[size];
+        bf.get(buf, 0, size);
+        ByteBuffer local = ByteBuffer.wrap(buf);
+        logger.info("BUFFER STUFF {}, {}", local.array(), local.limit());
+        mbuilder.acceptBytes(local);
         if (mbuilder.isConstructed()) {
           client.acceptMessage(mbuilder.getMessage());
+          mbuilder = new MessageBuilder();
         }
-        buffer.clear();
+        bf.clear();
       }
     } catch (ExecutionException | InterruptedException e) {
       logger.error(e.toString());

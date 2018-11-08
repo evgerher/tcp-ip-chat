@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import packets.Packet;
 
 public class Server {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
@@ -31,7 +32,7 @@ public class Server {
       while (true) {
         if (!worker.isOpen())
           break;
-        ByteBuffer buffer = ByteBuffer.allocate(32);
+        ByteBuffer buffer = ByteBuffer.allocate(Packet.PACKET_SIZE);
         Future<Integer> readResult  = worker.read(buffer);
         // perform other computations
 

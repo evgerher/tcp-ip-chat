@@ -1,5 +1,6 @@
 package packets;
 
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,8 +14,8 @@ public class MessageBuilder {
     packetList = new LinkedList<>();
   }
 
-  public void acceptBytes(byte bytes[]) {  // Reimplement in order to work with different chats
-    Packet packet = Packet.decode(bytes);
+  public void acceptBytes(ByteBuffer bf) {  // Reimplement in order to work with different chats
+    Packet packet = Packet.decode(bf);
     packetList.add(packet);
     if (packet.isLast()) {
       finished = true;

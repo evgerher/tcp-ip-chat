@@ -25,7 +25,7 @@ public class Packet {
     this.id = id;
     this.last = last;
 
-    CONTENT_SIZE = PACKET_SIZE - bytes.length - 4 - 4 - 4 - 4;  // -bytes.length - sizeof(id + int(last) + part + packet_size)
+    CONTENT_SIZE = bytes.length + 4 + 4 + 4 + 4;  // -bytes.length - sizeof(id + int(last) + part + packet_size)
   }
 
   public boolean isPart() {
@@ -52,27 +52,28 @@ public class Packet {
     return last;
   }
   
-  public byte[] toBytes() {
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    os.write(id);
-    os.write(part);
-    os.write(last ? 1: 0);
-    os.write(CONTENT_SIZE);
-    try {
-      os.write(bytes);
-    } catch (IOException e) {
-      logger.error("PANIC");  // TODO: remove
-    }
-    return os.toByteArray();
+  public ByteBuffer toBytes() {
+    ByteBuffer bf = ByteBuffer.allocate(CONTENT_SIZE);
+    bf.putInt(id);
+    bf.putInt(part);
+    bf.putInt(last ? 1: 0);
+    bf.putInt(CONTENT_SIZE);
+    bf.put(bytes);
+    bf.flip();
+
+    return bf;
   }
 
-  public static Packet decode(byte[] bytes) {
-    ByteBuffer bf = ByteBuffer.wrap(bytes);
-    int id = bf.getInt(0);
-    int part = bf.getInt(1);
-    boolean last = bf.getInt(2) > 0;
-    int size = bf.getInt(3);
-    byte content[] = Arrays.copyOfRange(bytes, 16, size);
+  public static Packet decode(ByteBuffer bf) {
+    int id = bf.getInt();
+    int part = bf.getInt();
+    boolean last = bf.getInt() > 0;
+    logger.info("IS LAST = {}", last);
+    int size = bf.getInt();
+
+//    bf.rewind();
+    byte content[] = new byte[size];
+    bf.get(content, 16, size - 16);
 
     return new Packet(id, part, content, last);
   }
