@@ -68,10 +68,8 @@ public class Packet {
     int id = bf.getInt();
     int part = bf.getInt();
     boolean last = bf.getInt() > 0;
-    logger.info("IS LAST = {}", last);
     int size = bf.getInt();
 
-//    bf.rewind();
     byte content[] = new byte[size];
     bf.get(content, 16, size - 16);
 
