@@ -25,7 +25,7 @@ public class Packet {
     this.id = id;
     this.last = last;
 
-    CONTENT_SIZE = bytes.length + 4 + 4 + 4 + 4;  // -bytes.length - sizeof(id + int(last) + part + packet_size)
+    CONTENT_SIZE = bytes.length + 4 + 4 + 4 + 4;  // bytes.length + sizeof(id + int(last) + part + packet_size)
   }
 
   public boolean isPart() {
@@ -52,7 +52,7 @@ public class Packet {
     return last;
   }
   
-  public ByteBuffer toBytes() {
+  public ByteBuffer byteBuffer() {
     ByteBuffer bf = ByteBuffer.allocate(CONTENT_SIZE);
     bf.putInt(id);
     bf.putInt(part);

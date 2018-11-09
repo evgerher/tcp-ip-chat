@@ -35,7 +35,7 @@ public class ClientSocket extends Thread {
     Packet[] packets = msg.getPackets();
 
     for (Packet p: packets) {
-      ByteBuffer bf = p.toBytes();
+      ByteBuffer bf = p.byteBuffer();
       Future<Integer> writeResult  = channel.write(bf);
 //    for (int i = 0; i < 5; i++) {
 //      logger.info("Hello {}", i);
