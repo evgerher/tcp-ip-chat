@@ -11,5 +11,12 @@
 
   <artifactId>server</artifactId>
 
+  <dependencies>
+    <dependency>
+      <groupId>ipjava.chat</groupId>
+      <artifactId>utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 
 </project>
