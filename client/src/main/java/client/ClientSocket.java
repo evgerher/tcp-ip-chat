@@ -8,9 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import packets.Message;
-import packets.MessageBuilder;
-import packets.Packet;
+import packets.*;
 
 public class ClientSocket extends Thread {
   private static final Logger logger = LoggerFactory.getLogger(ClientSocket.class);
@@ -24,11 +22,11 @@ public class ClientSocket extends Thread {
     this.client = client;
     closed = false;
 
-    logger.info("client.Client starts to establish connection");
+    logger.info("Client starts to establish connection");
     channel = AsynchronousSocketChannel.open();
     connection = channel.connect(new InetSocketAddress("127.0.0.1", 10001));
     connection.get();
-    logger.info("client.Client connected");
+    logger.info("Client connected");
   }
 
   public void sendMessage(Message msg) throws ExecutionException, InterruptedException {
@@ -37,9 +35,6 @@ public class ClientSocket extends Thread {
     for (Packet p: packets) {
       ByteBuffer bf = p.byteBuffer();
       Future<Integer> writeResult  = channel.write(bf);
-//    for (int i = 0; i < 5; i++) {
-//      logger.info("Hello {}", i);
-//    }
       logger.info("write result code [{}]", writeResult.get());
     }
   }
