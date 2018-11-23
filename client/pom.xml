@@ -17,6 +17,12 @@
       <artifactId>utils</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>ipjava.chat</groupId>
+      <artifactId>server</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 

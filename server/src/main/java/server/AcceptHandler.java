@@ -1,6 +1,5 @@
 package server;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -21,6 +20,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
   public void completed(AsynchronousSocketChannel socketChannel, Void arg1) {
     logger.info("client connected: {}", socketChannel);
     listener.accept(null, this);
+    server.addClient(socketChannel);
   }
 
   public void failed(Throwable arg0, Void arg1) {
