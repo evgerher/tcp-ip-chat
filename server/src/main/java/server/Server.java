@@ -37,7 +37,7 @@ public class Server {
         // perform other computations
 
         readResult.get();
-        logger.info("Read data from user [{}]", new String(buffer.array()));
+        logger.trace("Read data from user [{}]", new String(buffer.array()));
 
         buffer.flip();
         Future<Integer> writeResult = worker.write(buffer);
@@ -45,7 +45,7 @@ public class Server {
         // perform other computations
 
         Integer res = writeResult.get();
-        logger.info("Sent data to user [{}]", new String(buffer.array()));
+        logger.trace("Sent data to user [{}]", new String(buffer.array()));
         if (res == -1)
           break;
         buffer.clear();

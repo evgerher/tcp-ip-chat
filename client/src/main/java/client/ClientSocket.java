@@ -58,13 +58,13 @@ public class ClientSocket extends Thread {
       while (!closed) {
         Future<Integer> readResult = channel.read(bf);
         int size = readResult.get();
-        logger.info("read result code [{}]", size);
+        logger.trace("read result code [{}]", size);
 
         bf.rewind();
         byte[] buf = new byte[size];
         bf.get(buf, 0, size);
         ByteBuffer local = ByteBuffer.wrap(buf);
-        logger.info("BUFFER STUFF {}, {}", local.array(), local.limit());
+        logger.trace("BUFFER STUFF {}, {}", local.array(), local.limit());
         mbuilder.acceptBytes(local);
         if (mbuilder.isConstructed()) {
           client.acceptMessage(mbuilder.getMessage());
