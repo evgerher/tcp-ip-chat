@@ -15,9 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Packet;
@@ -25,14 +23,14 @@ import packets.Packet;
 public class Server {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
+  private final ExecutorService threadPool;
   private final AsynchronousServerSocketChannel listener;
   private final List<AsynchronousSocketChannel> connections = Collections
       .synchronizedList(new ArrayList<AsynchronousSocketChannel>());
 
   public Server() throws IOException, InterruptedException, ExecutionException {
-    ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(10);
-    AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(newFixedThreadPool);
-
+    threadPool = Executors.newFixedThreadPool(10);
+    AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(threadPool);
     logger.info("Start initialization of a server");
 
     listener = AsynchronousServerSocketChannel.open(group);
@@ -45,41 +43,60 @@ public class Server {
     logger.info("End initialization of a server");
   }
 
-  private ByteBuffer sendMessages(ByteBuffer bf) {
-    for (AsynchronousSocketChannel ch: connections)
-      ch.write(bf);
+  public ByteBuffer sendMessages(ByteBuffer bf, AsynchronousSocketChannel source) {
+    for (AsynchronousSocketChannel con: connections) {
+      if (con != source) {
+        logger.info("Write to socket :: user{}", connections.indexOf(con));
+        con.write(bf, bf, new WriteHandler(this, con));
+        bf.rewind();
+      }
+    }
+
+    bf.clear();
     return bf;
   }
 
-  public void runServer() throws ExecutionException, InterruptedException, IOException {
-    while (true) {
-      for (AsynchronousSocketChannel ch: connections) {
-        CompletableFuture<ByteBuffer> readResult = CompletableFuture.supplyAsync(
-            new Supplier<ByteBuffer>() {
-              @Override
-              public ByteBuffer get() {
-                ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-                try {
-                  ch.read(bf).get();
-                } catch (InterruptedException e) {
-                  logger.error(e.toString());
-                } catch (ExecutionException p) {
-                  logger.error(p.toString());
-                }
-
-                return bf;
-              }
-            }
-        ).thenApplyAsync(new Function<ByteBuffer, ByteBuffer>() {
-          @Override
-          public ByteBuffer apply(ByteBuffer byteBuffer) {
-            return sendMessages(byteBuffer);
-          }
-        });
-
-        readResult.get();
+  protected CompletableFuture<ByteBuffer> buildFuture(AsynchronousSocketChannel ch) {
+    CompletableFuture future = CompletableFuture.supplyAsync(() -> {
+      logger.info("Build future ::  user{}", connections.indexOf(ch));
+      ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
+      try {
+        ch.read(bf).get();
+      } catch (InterruptedException e) {
+        logger.error(e.toString());
+      } catch (ExecutionException e) {
+        logger.error(e.toString());
       }
-    }
+
+      bf.flip();
+      logger.info("Read message :: {}", new String(bf.array()));
+      return bf;
+    }).thenApplyAsync(new Function<ByteBuffer, ByteBuffer>() {
+      @Override
+      public ByteBuffer apply(ByteBuffer byteBuffer) {
+        logger.info("Apply method :: {}", new String(byteBuffer.array()));
+//        sendMessages(byteBuffer);
+        try {
+          return buildFuture(ch).get();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+
+        return null;
+      }
+    });
+
+    return future;
+  }
+
+  public void runServer() throws ExecutionException, InterruptedException, IOException {
+//    for (AsynchronousSocketChannel ch: connections) {
+//      CompletableFuture<ByteBuffer> readResult = buildFuture(ch);
+//      readResult.get();
+//    }
+
 //    if ((worker != null) && (worker.isOpen())) {
 //      while (true) {
 //        if (!worker.isOpen())
@@ -113,6 +130,9 @@ public class Server {
 
   public void addClient(AsynchronousSocketChannel cl) {
     connections.add(cl);
+    ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
+    ReadHandler rh = new ReadHandler(this, cl);
+    cl.read(bf, bf, rh);
   }
 
   public void removeClient(AsynchronousSocketChannel cl) {
