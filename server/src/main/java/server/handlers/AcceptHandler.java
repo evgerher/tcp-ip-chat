@@ -1,11 +1,11 @@
-package server;
+package server.handlers;
 
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import server.Server;
 
 public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
   private static final Logger logger = LoggerFactory.getLogger(AcceptHandler.class);
