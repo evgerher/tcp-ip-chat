@@ -44,18 +44,18 @@ public class Server {
     logger.info("End initialization of a server");
   }
 
-  public ByteBuffer sendMessages(ByteBuffer bf, AsynchronousSocketChannel source) {
-    for (AsynchronousSocketChannel con: connections) {
-      if (con != source) {
-        logger.info("Write to socket :: user{}, content :: {}", connections.indexOf(con), new String(bf.array()));
-        con.write(bf, bf, new WriteHandler(this, con));
-
-        bf.rewind();
+  public void sendMessages(ByteBuffer bf, AsynchronousSocketChannel source) {
+    synchronized (connections) {
+      for (AsynchronousSocketChannel con : connections) {
+        if (con != source) {
+          logger.info("Write to socket :: user{}, content :: {}", connections.indexOf(con),
+              new String(bf.array()));
+          con.write(bf, String.format("user%d", connections.indexOf(con)),
+              new WriteHandler(this, con));
+//        bf.rewind();
+        }
       }
     }
-
-    bf.clear();
-    return bf;
   }
 
   public static void main(String args[]) throws Exception {

@@ -47,28 +47,33 @@ public class ClientSocket extends Thread {
 
   @Override
   public void run() {
-    try {
+//    try {
       ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-      MessageBuilder mbuilder = new MessageBuilder();
-      while (!closed) {
-        Future<Integer> readResult = channel.read(bf);
-        int size = readResult.get();
-        logger.info("read result code [{}]", size);
-
-        bf.rewind();
-        byte[] buf = new byte[size];
-        bf.get(buf, 0, size);
-        ByteBuffer local = ByteBuffer.wrap(buf);
-        logger.info("BUFFER STUFF {}, {}", local.array(), local.limit());
-        mbuilder.acceptBytes(local);
-        if (mbuilder.isConstructed()) {
-          client.acceptMessage(mbuilder.getMessage());
-          mbuilder = new MessageBuilder();
-        }
-        bf.clear();
-      }
-    } catch (ExecutionException | InterruptedException e) {
-      logger.error(e.toString());
+      channel.read(bf, bf, new ReadHandler(channel, client));
+//      while (!closed) {
+//        Future<Integer> readResult = channel.read(bf);
+//        int size = readResult.get();
+//        logger.info("read result code [{}]", size);
+//
+//        bf.rewind();
+//        byte[] buf = new byte[size];
+//        bf.get(buf, 0, size);
+//        ByteBuffer local = ByteBuffer.wrap(buf);
+//        logger.info("BUFFER STUFF {}, {}", local.array(), local.limit());
+//        mbuilder.acceptBytes(local);
+//        if (mbuilder.isConstructed()) {
+//          client.acceptMessage(mbuilder.getMessage());
+//          mbuilder = new MessageBuilder();
+//        }
+//        bf.clear();
+//      }
+//    } catch (ExecutionException | InterruptedException e) {
+//      logger.error(e.toString());
+//    }
+    try {
+      Thread.currentThread().join();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 }

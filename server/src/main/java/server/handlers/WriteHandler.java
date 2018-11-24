@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.Server;
 
-public class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
+public class WriteHandler implements CompletionHandler<Integer, String> {
   private static final Logger logger = LoggerFactory.getLogger(ReadHandler.class);
 
   private final Server server;
@@ -19,18 +19,18 @@ public class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
   }
 
   @Override
-  public void completed(Integer result, ByteBuffer attachment) {
+  public void completed(Integer result, String attachment) {
 //    attachment.flip();
 //    server.sendMessages(attachment);
 //    attachment.clear();
 //
 //    ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
 //    socket.read(bf, bf, new ReadHandler(server, socket));
-    logger.info("Successfully sent message to {}", socket);
+    logger.info("Successfully sent message to {}", attachment);
   }
 
   @Override
-  public void failed(Throwable exc, ByteBuffer attachment) {
+  public void failed(Throwable exc, String attachment) {
     logger.error("Error during writing handling");
   }
 }
