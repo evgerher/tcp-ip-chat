@@ -19,7 +19,7 @@ public class Packet {
   private byte[] bytes;
   private boolean last;
 
-  Packet(int id, int part, byte[] bytes, boolean last) {
+  protected Packet(int id, int part, byte[] bytes, boolean last) {
     this.bytes = bytes;
     this.part = part;
     this.id = id;

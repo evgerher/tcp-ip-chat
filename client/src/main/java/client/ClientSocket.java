@@ -8,9 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import packets.Message;
-import packets.MessageBuilder;
-import packets.Packet;
+import packets.*;
 
 public class ClientSocket extends Thread {
   private static final Logger logger = LoggerFactory.getLogger(ClientSocket.class);
@@ -24,11 +22,11 @@ public class ClientSocket extends Thread {
     this.client = client;
     closed = false;
 
-    logger.info("client.Client starts to establish connection");
+    logger.info("Client starts to establish connection");
     channel = AsynchronousSocketChannel.open();
     connection = channel.connect(new InetSocketAddress("127.0.0.1", 10001));
     connection.get();
-    logger.info("client.Client connected");
+    logger.info("Client connected");
   }
 
   public void sendMessage(Message msg) throws ExecutionException, InterruptedException {
@@ -37,9 +35,6 @@ public class ClientSocket extends Thread {
     for (Packet p: packets) {
       ByteBuffer bf = p.byteBuffer();
       Future<Integer> writeResult  = channel.write(bf);
-//    for (int i = 0; i < 5; i++) {
-//      logger.info("Hello {}", i);
-//    }
       logger.info("write result code [{}]", writeResult.get());
     }
   }
@@ -49,30 +44,13 @@ public class ClientSocket extends Thread {
     closed = true;
   }
 
-
   @Override
   public void run() {
+    ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
+    channel.read(bf, bf, new ReadHandler(channel, client));
     try {
-      ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-      MessageBuilder mbuilder = new MessageBuilder();
-      while (!closed) {
-        Future<Integer> readResult = channel.read(bf);
-        int size = readResult.get();
-        logger.trace("read result code [{}]", size);
-
-        bf.rewind();
-        byte[] buf = new byte[size];
-        bf.get(buf, 0, size);
-        ByteBuffer local = ByteBuffer.wrap(buf);
-        logger.trace("BUFFER STUFF {}, {}", local.array(), local.limit());
-        mbuilder.acceptBytes(local);
-        if (mbuilder.isConstructed()) {
-          client.acceptMessage(mbuilder.getMessage());
-          mbuilder = new MessageBuilder();
-        }
-        bf.clear();
-      }
-    } catch (ExecutionException | InterruptedException e) {
+      Thread.currentThread().join();
+    } catch (InterruptedException e) {
       logger.error(e.toString());
     }
   }

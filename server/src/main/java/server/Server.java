@@ -3,60 +3,70 @@ package server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Packet;
+import server.handlers.AcceptHandler;
+import server.handlers.ReadHandler;
+import server.handlers.WriteHandler;
 
 public class Server {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
-  private final AsynchronousServerSocketChannel server;
-  private AsynchronousSocketChannel worker;
+  private final ExecutorService threadPool;
+  private final AsynchronousServerSocketChannel listener;
+  private final List<AsynchronousSocketChannel> connections = Collections
+      .synchronizedList(new ArrayList<AsynchronousSocketChannel>());
 
   public Server() throws IOException, InterruptedException, ExecutionException {
+    threadPool = Executors.newFixedThreadPool(10);
+    AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(threadPool);
     logger.info("Start initialization of a server");
-    server = AsynchronousServerSocketChannel.open();
-    server.bind(new InetSocketAddress("127.0.0.1", 10001));
+
+    listener = AsynchronousServerSocketChannel.open(group);
+    InetSocketAddress address = new InetSocketAddress("localhost", 10001);
+    listener.bind(address);
+
+    AcceptHandler acceptCompletionHandler = new AcceptHandler(listener, this);
+    listener.accept(null, acceptCompletionHandler);
+
     logger.info("End initialization of a server");
-    Future<AsynchronousSocketChannel> acceptFuture = server.accept();
-    worker = acceptFuture.get();
-    logger.info("Accepted connection");
   }
 
-  public void runServer() throws ExecutionException, InterruptedException, IOException {
-    if ((worker != null) && (worker.isOpen())) {
-      while (true) {
-        if (!worker.isOpen())
-          break;
-        ByteBuffer buffer = ByteBuffer.allocate(Packet.PACKET_SIZE);
-        Future<Integer> readResult  = worker.read(buffer);
-        // perform other computations
-
-        readResult.get();
-        logger.trace("Read data from user [{}]", new String(buffer.array()));
-
-        buffer.flip();
-        Future<Integer> writeResult = worker.write(buffer);
-
-        // perform other computations
-
-        Integer res = writeResult.get();
-        logger.trace("Sent data to user [{}]", new String(buffer.array()));
-        if (res == -1)
-          break;
-        buffer.clear();
+  public void sendMessages(ByteBuffer bf, AsynchronousSocketChannel source) {
+    synchronized (connections) {
+      for (AsynchronousSocketChannel con : connections) {
+        if (con != source) {
+          ByteBuffer b = ByteBuffer.wrap(bf.array()); // Better to use copy, because some magic happens and ByteBuffer object contains wrong data
+          logger.debug("Write to socket :: user{}, content :: {}", connections.indexOf(con), new String(b.array()));
+          con.write(b, String.format("user%d", connections.indexOf(con)), new WriteHandler(this, con));
+        }
       }
-      worker.close();
-      server.close();
     }
   }
 
   public static void main(String args[]) throws Exception {
     Server s = new Server();
-    s.runServer();
+    Thread.currentThread().join();
+  }
+
+  public void addClient(AsynchronousSocketChannel cl) {
+    connections.add(cl);
+    ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
+    ReadHandler rh = new ReadHandler(this, cl);
+    cl.read(bf, bf, rh);
+  }
+
+  public void removeClient(AsynchronousSocketChannel cl) {
+    connections.remove(cl);
   }
 }
