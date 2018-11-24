@@ -54,11 +54,6 @@ public class Server {
     }
   }
 
-  public static void main(String args[]) throws Exception {
-    Server s = new Server();
-    Thread.currentThread().join();
-  }
-
   public void addClient(AsynchronousSocketChannel cl) {
     connections.add(cl);
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
@@ -69,4 +64,10 @@ public class Server {
   public void removeClient(AsynchronousSocketChannel cl) {
     connections.remove(cl);
   }
+
+  public static void main(String args[]) throws Exception {
+    Server s = new Server();
+    Thread.currentThread().join();
+  }
+
 }

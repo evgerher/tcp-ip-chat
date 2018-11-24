@@ -29,7 +29,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     socket.read(bf, bf, this);
 
     attachment.rewind();
-    builder.acceptBytes(attachment);
+    builder.acceptPacket(attachment);
 
     if (builder.isConstructed()) {
       client.acceptMessage(builder.getMessage());

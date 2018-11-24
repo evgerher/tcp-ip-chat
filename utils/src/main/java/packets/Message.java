@@ -9,19 +9,25 @@ import org.slf4j.LoggerFactory;
 public class Message {
   private static final Logger logger = LoggerFactory.getLogger(Message.class);
 
-  private Packet[] packets;
-  private byte[] content;
+  private final Packet[] packets;
+  private final int room;
 
-  public Message(byte bytes[]) {
-    packets = PacketFactory.generatePackets(bytes);
+  public Message(byte bytes[], int room) {
+    this.room = room;
+    packets = PacketFactory.generatePackets(bytes, room);
   }
 
-  public Message(Packet[] packets) {
+  public Message(Packet[] packets, int room) {
     this.packets = packets;
+    this.room = room;
   }
 
   public Packet[] getPackets() {
     return packets;
+  }
+
+  public int getRoom() {
+    return room;
   }
 
   public byte[] getContent() {  // TODO: REMOVE EXCEPTION
@@ -31,7 +37,7 @@ public class Message {
         os.write(p.getContent());
       }
     } catch (Exception e) {
-      logger.error("Panic");
+      logger.error(e.toString());
     }
 
     return os.toByteArray();
