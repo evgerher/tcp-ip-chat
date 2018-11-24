@@ -48,11 +48,9 @@ public class Server {
     synchronized (connections) {
       for (AsynchronousSocketChannel con : connections) {
         if (con != source) {
-          logger.info("Write to socket :: user{}, content :: {}", connections.indexOf(con),
-              new String(bf.array()));
-          con.write(bf, String.format("user%d", connections.indexOf(con)),
-              new WriteHandler(this, con));
-//        bf.rewind();
+          ByteBuffer b = ByteBuffer.wrap(bf.array()); // Better to use copy, because some magic happens and ByteBuffer object contains wrong data
+          logger.info("Write to socket :: user{}, content :: {}", connections.indexOf(con), new String(b.array()));
+          con.write(b, String.format("user%d", connections.indexOf(con)), new WriteHandler(this, con));
         }
       }
     }

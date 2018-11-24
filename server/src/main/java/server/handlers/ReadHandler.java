@@ -26,7 +26,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
     socket.read(bf, bf, this);
 
-//    attachment.flip();
+    attachment.flip();
     server.sendMessages(attachment, socket);
   }
 
