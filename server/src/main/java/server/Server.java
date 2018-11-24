@@ -1,7 +1,5 @@
 package server;
 
-import static java.util.concurrent.CompletableFuture.supplyAsync;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -49,7 +47,7 @@ public class Server {
       for (AsynchronousSocketChannel con : connections) {
         if (con != source) {
           ByteBuffer b = ByteBuffer.wrap(bf.array()); // Better to use copy, because some magic happens and ByteBuffer object contains wrong data
-          logger.info("Write to socket :: user{}, content :: {}", connections.indexOf(con), new String(b.array()));
+          logger.debug("Write to socket :: user{}, content :: {}", connections.indexOf(con), new String(b.array()));
           con.write(b, String.format("user%d", connections.indexOf(con)), new WriteHandler(this, con));
         }
       }

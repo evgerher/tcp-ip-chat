@@ -21,8 +21,6 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
   @Override
   public void completed(Integer bytesRead, ByteBuffer attachment) {
-//    attachment.clear();
-
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
     socket.read(bf, bf, this);
 

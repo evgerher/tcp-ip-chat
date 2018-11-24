@@ -23,15 +23,6 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     listener.accept(null, this);
     server.addClient(socketChannel);
     logger.info("Successfully connected");
-//
-//    try {
-//      server.buildFuture(socketChannel).get()
-//
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();
-//    } catch (ExecutionException e) {
-//      e.printStackTrace();
-//    }
   }
 
   public void failed(Throwable arg0, Void arg1) {
