@@ -11,7 +11,8 @@ public class PacketFactory {
   public static synchronized Packet[] generatePackets(byte[] bytes) {
     int from, end, step, part;
     int amount = bytes.length;
-    int packetsAmount = amount / Packet.MAX_CONTENT_SIZE + amount % Packet.MAX_CONTENT_SIZE > 0 ? 1: 0;
+    int packetsAmount = amount / Packet.MAX_CONTENT_SIZE;
+    packetsAmount += amount % Packet.MAX_CONTENT_SIZE > 0 ? 1: 0;
     boolean last;
 
     Packet packets[] = new Packet[packetsAmount];
