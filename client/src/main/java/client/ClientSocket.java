@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.*;
 
-public class ClientSocket extends Thread {
+public class ClientSocket extends Thread implements MessageAcceptor {
   private static final Logger logger = LoggerFactory.getLogger(ClientSocket.class);
   private Future<Void> connection;
 
@@ -47,11 +47,17 @@ public class ClientSocket extends Thread {
   @Override
   public void run() {
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-    channel.read(bf, bf, new ReadHandler(channel, client));
+    MessageBuilder builder = new MessageBuilder(this);
+    channel.read(bf, bf, new ReadHandler(channel, builder));
     try {
       Thread.currentThread().join();
     } catch (InterruptedException e) {
       logger.error(e.toString());
     }
+  }
+
+  @Override
+  public void acceptMessage(Message message) {
+    client.acceptMessage(message); //todo: wtf
   }
 }

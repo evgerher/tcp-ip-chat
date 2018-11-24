@@ -3,18 +3,17 @@ package packets;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class MessageBuilder {
   private Message message;
   private Map<Integer, List<Packet>> roomPackets;
-  private boolean finished;
+  private final MessageAcceptor acceptor;
 
-  public MessageBuilder() {
-    finished = false;
+  public MessageBuilder(MessageAcceptor acceptor) {
     roomPackets = new HashMap<>();
+    this.acceptor = acceptor;
   }
 
   public synchronized void acceptPacket(ByteBuffer bf) {  // Reimplement in order to work with different chats
@@ -23,9 +22,9 @@ public class MessageBuilder {
     boolean last = packet.isLast();
 
     if (last) {
-      finished = true;
       int roomid = packet.getRoomid();
       message = buildMessage(roomPackets.get(roomid), roomid);
+      acceptor.acceptMessage(message);
     }
   }
 
@@ -45,10 +44,6 @@ public class MessageBuilder {
     }
 
     roomContainer.add(packet);
-  }
-
-  public boolean isConstructed() {
-    return finished;
   }
 
   public Message getMessage() {

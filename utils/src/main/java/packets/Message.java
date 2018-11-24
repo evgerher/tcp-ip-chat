@@ -45,6 +45,7 @@ public class Message {
 
   @Override
   public String toString() {
-    return new String(getContent());
+    String s = String.format("%s :: room %d", new String(getContent()), room);
+    return s;
   }
 }

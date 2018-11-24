@@ -15,12 +15,12 @@ public class Client {
       connection = new ClientSocket(this);
       connection.start();
     } catch (Exception e) {
-      logger.error(e.toString());  // TODO: remove this
+      logger.error("oh no, I die {}", e.toString());  // TODO: remove this
     }
   }
 
   public void sendMessage(String content) {
-    Message msg = new Message(new String(content).getBytes());
+    Message msg = new Message(new String(content).getBytes(), 1);
 
     try {
       connection.sendMessage(msg);
