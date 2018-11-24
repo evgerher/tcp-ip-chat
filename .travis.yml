@@ -2,3 +2,5 @@ language: java
 jdk:
   - oraclejdk8
 script: mvn -e test
+notifications:
+  webhooks: https://fathomless-fjord-24024.herokuapp.com/notify
