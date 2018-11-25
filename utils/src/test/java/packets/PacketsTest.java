@@ -37,12 +37,15 @@ public class PacketsTest {
         + "Maecenas vel urna pellentesque, eleifend lacus eget, accumsan ante. Mauris "
         + "ultrices, nulla vitae facilisis volutpat, tellus orci porta urna, a interdum "
         + "arcu ipsum at arcu. Vivamus id.";
-    final String msg10 = "Lorem ipsu";
+    final String msg226 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+        + "Maecenas vel urna pellentesque, eleifend lacus eget, accumsan ante. Mauris "
+        + "ultrices, nulla vitae facilisis volutpat, tellus orci porta urna, a interdum "
+        + "arcu ipsum at arc";
 
     Packet[] packets1 = PacketFactory.generatePackets(msg240.getBytes(), 0, false);
-    Assert.assertEquals(1, packets1.length);
+    Assert.assertEquals(2, packets1.length);
 
-    Packet[] packets2 = PacketFactory.generatePackets(msg10.getBytes(), 0, false);
+    Packet[] packets2 = PacketFactory.generatePackets(msg226.getBytes(), 0, false);
     Assert.assertEquals(1, packets2.length);
   }
 
