@@ -32,7 +32,7 @@ public class Client {
     Scanner sc = new Scanner(System.in);
     while (!stop) {
       String s = sc.nextLine();
-      if (s.equals(".stop"))
+      if (s.equals("!stop"))
         stop = true;
       cl.sendMessage(s);
     }

@@ -59,11 +59,11 @@ public class Packet {
 
   public ByteBuffer byteBuffer() {
     ByteBuffer bf = ByteBuffer.allocate(CONTENT_SIZE);
+    bf.putInt(roomid);
     bf.putInt(id);
     bf.putInt(part);
     bf.putInt(last ? 1: 0);
     bf.putInt(CONTENT_SIZE);
-    bf.putInt(roomid);
     bf.put(bytes);
     bf.flip();
 
@@ -71,11 +71,11 @@ public class Packet {
   }
 
   public static Packet decode(ByteBuffer bf) {
+    int roomid = bf.getInt();
     int id = bf.getInt();
     int part = bf.getInt();
     boolean last = bf.getInt() > 0;
     int size = bf.getInt();
-    int roomid = bf.getInt();
 
     byte content[] = new byte[size];
     bf.get(content, FIELDS_SIZE, size - FIELDS_SIZE);
