@@ -73,7 +73,7 @@ public class Server {
       roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???
     }
 
-    synchronized (roomMembers) {
+    synchronized (roomMembers) { //TODO: IS IT LEGAL ???
       for (AsynchronousSocketChannel con: roomMembers) {
         if (con != source) {
           con.write(b, String.format("user%d room%d", connections.indexOf(con), room), new WriteHandler(this, con));
@@ -111,5 +111,4 @@ public class Server {
     Server s = new Server();
     Thread.currentThread().join();
   }
-
 }
