@@ -16,12 +16,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import packets.Message;
+import packets.MessageAcceptor;
+import packets.MessageBuilder;
 import packets.Packet;
 import server.handlers.AcceptHandler;
 import server.handlers.ReadHandler;
 import server.handlers.WriteHandler;
 
-public class Server {
+public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
   private final int INITIAL_ROOM = 0;
@@ -29,11 +32,15 @@ public class Server {
   private final List<AsynchronousSocketChannel> connections = Collections
       .synchronizedList(new ArrayList<>());
   private final Map<Integer, List<AsynchronousSocketChannel>> rooms;
+  private final MessageBuilder messageBuilder;
+
+  private AsynchronousSocketChannel annotation;
 
   public Server() throws IOException, InterruptedException, ExecutionException {
     logger.info("Start initialization of a server");
     ExecutorService threadPool = Executors.newFixedThreadPool(10); //TODO: what is it for?
     AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(threadPool);
+    messageBuilder = new MessageBuilder(this);
     rooms = initRooms();
 
     listener = AsynchronousServerSocketChannel.open(group);
@@ -63,23 +70,16 @@ public class Server {
     }
   }
 
-  public void  sendPacket(ByteBuffer bf, AsynchronousSocketChannel source) {
+  public void  processPacket(ByteBuffer bf, AsynchronousSocketChannel source) {
     ByteBuffer b = ByteBuffer.wrap(bf.array());
     int room = b.getInt();
+    boolean isCommand = b.getInt() > 0;
     b.rewind();
 
-    List<AsynchronousSocketChannel> roomMembers;
-    synchronized (rooms) {
-      roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???
-    }
-
-    synchronized (roomMembers) { //TODO: IS IT LEGAL ???
-      for (AsynchronousSocketChannel con: roomMembers) {
-        if (con != source) {
-          con.write(b, String.format("user%d room%d", connections.indexOf(con), room), new WriteHandler(this, con));
-          logger.debug("Write to socket :: user{}, room :: {}", connections.indexOf(con), room);
-        }
-      }
+    if (isCommand) {
+      messageBuilder.acceptPacket(b);
+    } else {
+      sendPacket(b, source, room);
     }
 //    synchronized (connections) {
 //      for (AsynchronousSocketChannel con : connections) {
@@ -90,6 +90,60 @@ public class Server {
 //        }
 //      }
 //    }
+  }
+
+  private void processCommand(Message message) {
+    String cmd = new String(message.getContent());
+    if (cmd.startsWith("/register")) {
+      int len = "/register".length();
+      String substring = cmd.substring(len);
+      try {
+        Integer id = Integer.parseInt(substring);
+        synchronized (rooms) { // todo: should I???
+          List<AsynchronousSocketChannel> list = rooms.put(id, Collections.synchronizedList(new ArrayList<>()));
+          list.add(getAnnotation());
+        }
+      } catch (RuntimeException e) {
+        e.printStackTrace();
+        logger.error("Register :: Could not parse integer for string [{}]", cmd); // todo: better message for logger
+      }
+    } else if (cmd.startsWith("/connect")) {
+      int len = "/connect".length();
+      String substring = cmd.substring(len);
+      try {
+        Integer id = Integer.parseInt(substring);
+        synchronized (rooms) { // todo: should I???
+          List<AsynchronousSocketChannel> list = rooms.getOrDefault(id, null);
+          if (list != null)
+            list.add(getAnnotation());
+          else {
+            //todo: send message back !
+            logger.error("Room {} does not exist", id);
+          }
+        }
+      } catch (RuntimeException e) {
+        e.printStackTrace();
+        logger.error("Connect :: Could not parse integer for string [{}]", cmd); // todo: better message for logger
+      }
+    }
+  }
+
+  private void sendPacket(ByteBuffer b, AsynchronousSocketChannel source, int room) {
+
+    List<AsynchronousSocketChannel> roomMembers;
+    synchronized (rooms) {
+      roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???
+    }
+
+    synchronized (roomMembers) { //TODO: IS IT LEGAL ???
+      for (AsynchronousSocketChannel con : roomMembers) {
+        if (con != source) {
+          con.write(b, String.format("user%d room%d", connections.indexOf(con), room),
+              new WriteHandler(this, con));
+          logger.debug("Write to socket :: user{}, room :: {}", connections.indexOf(con), room);
+        }
+      }
+    }
   }
 
   public void addClient(AsynchronousSocketChannel cl) {
@@ -110,5 +164,22 @@ public class Server {
   public static void main(String args[]) throws Exception {
     Server s = new Server();
     Thread.currentThread().join();
+  }
+
+  @Override
+  public void acceptMessage(Message message) {
+    //todo: me
+    if (message.isCommand())
+      processCommand(message);
+  }
+
+  @Override
+  public void setAnnotation(AsynchronousSocketChannel annotation) {
+    this.annotation = annotation;
+  }
+
+  @Override
+  public AsynchronousSocketChannel getAnnotation() {
+    return annotation;
   }
 }

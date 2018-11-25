@@ -2,6 +2,7 @@ package client.handlers;
 
 import client.Client;
 import client.ClientSocket;
+import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Message;
@@ -29,8 +30,7 @@ public class MessageProcessor implements MessageAcceptor {
     if (content.startsWith(COMMAND_SYMBOL)) {
       parseCommand(content);
     } else {
-      Message msg = new Message(new String(content).getBytes(), roomid);
-
+      Message msg = new Message(new String(content).getBytes(), roomid, false);
       try {
         connection.sendMessage(msg);
       } catch (Exception e) {
@@ -52,20 +52,29 @@ public class MessageProcessor implements MessageAcceptor {
       } catch (RuntimeException e) {
         logger.error("Room :: Could not parse roomid from [{}]", content);
       }
-    } else if (content.startsWith("/register")) { // register on a new room on a server (int)
-      int len = "!room".length();
-      String number = content.substring(len);
+    } else if (content.startsWith("/register") || content.startsWith("/connect")) { // register on a new room on a server (int)
+//      int len = "/register".length();
+//      String number = content.substring(len);
       try {
-        Integer id = Integer.parseInt(number);
-        
+//        Integer id = Integer.parseInt(number);
+        sendCommand(content);
       } catch (RuntimeException e) {
-        logger.error("Register :: Could not parse roomid from [{}]", content);
+        e.printStackTrace();
+//        logger.error("Register or Connect :: Could not parse roomid from [{}]", content);
       }
     }
   }
 
   private void sendCommand(String content) {
-
+    byte[] bytes = content.getBytes();
+    Message message = new Message(bytes, -1, true);
+    try {
+      connection.sendMessage(message);
+    } catch (ExecutionException e) {
+      e.printStackTrace(); // todo: logger here
+    } catch (InterruptedException e) {
+      e.printStackTrace(); // todo: logger here
+    }
   }
 
   @Override

@@ -34,7 +34,7 @@ public class MessageBuilder {
     Packet[] packets = new Packet[roomList.size()];
     packets = packetList.toArray(packets);
 
-    return new Message(packets, roomid);
+    return new Message(packets);
   }
 
   private void storePacket(Packet packet) {

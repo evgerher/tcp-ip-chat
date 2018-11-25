@@ -8,7 +8,7 @@ public class PacketFactory {
   private static volatile int packetId = 0;
   private PacketFactory() {}
 
-  public static synchronized Packet[] generatePackets(byte[] bytes, int room) {
+  public static synchronized Packet[] generatePackets(byte[] bytes, int room, boolean isCommand) {
     int from, end, step, part;
     int amount = bytes.length;
     int packetsAmount = amount / Packet.MAX_CONTENT_SIZE;
@@ -24,7 +24,7 @@ public class PacketFactory {
       last = (i == (packetsAmount - 1));
 
       byte b[] = Arrays.copyOfRange(bytes, from, end);
-      Packet p = new Packet(packetId, part, b, last, room);
+      Packet p = new Packet(packetId, part, b, last, room, isCommand);
       packets[i] = p;
     }
 
