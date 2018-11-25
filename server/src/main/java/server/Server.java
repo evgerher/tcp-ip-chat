@@ -76,7 +76,7 @@ public class Server {
     synchronized (roomMembers) {
       for (AsynchronousSocketChannel con: roomMembers) {
         if (con != source) {
-          con.write(b, String.format("user%d", connections.indexOf(con)), new WriteHandler(this, con));
+          con.write(b, String.format("user%d room%d", connections.indexOf(con), room), new WriteHandler(this, con));
           logger.debug("Write to socket :: user{}, room :: {}", connections.indexOf(con), room);
         }
       }

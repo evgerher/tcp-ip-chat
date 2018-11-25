@@ -25,7 +25,7 @@ public class Packet {
     this.last = last;
     this.roomid = roomid;
 
-    CONTENT_SIZE = bytes.length + 4 + 4 + 4 + 4;  // bytes.length + sizeof(id + int(last) + part + packet_size + roomid)
+    CONTENT_SIZE = bytes.length + FIELDS_SIZE;  // bytes.length + sizeof(id + int(last) + part + packet_size + roomid)
     logger.debug("Built packet id={} part={}, last={}, roomid={}", id, part, last, roomid);
   }
 

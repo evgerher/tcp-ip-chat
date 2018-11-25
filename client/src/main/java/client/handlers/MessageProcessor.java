@@ -34,6 +34,7 @@ public class MessageProcessor implements MessageAcceptor {
       try {
         connection.sendMessage(msg);
       } catch (Exception e) {
+        e.printStackTrace();
         logger.error(e.toString());  // TODO: remove this
       }
     }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MessageBuilder {
   private Message message;
@@ -12,7 +13,7 @@ public class MessageBuilder {
   private final MessageAcceptor acceptor;
 
   public MessageBuilder(MessageAcceptor acceptor) {
-    roomPackets = new HashMap<>();
+    roomPackets = new ConcurrentHashMap<>();
     this.acceptor = acceptor;
   }
 
@@ -38,9 +39,11 @@ public class MessageBuilder {
 
   private void storePacket(Packet packet) {
     int roomid = packet.getRoomid();
+
     List<Packet> roomContainer = roomPackets.getOrDefault(roomid, null);
     if (roomContainer == null) {
-      roomContainer = roomPackets.put(roomid, new ArrayList<>());
+      roomContainer = new ArrayList<>();
+      roomPackets.put(roomid, roomContainer);
     }
 
     roomContainer.add(packet);
