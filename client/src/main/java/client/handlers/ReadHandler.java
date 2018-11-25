@@ -1,5 +1,6 @@
-package client;
+package client.handlers;
 
+import client.Client;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
