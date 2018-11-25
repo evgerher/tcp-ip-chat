@@ -35,7 +35,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
   private final Map<Integer, List<AsynchronousSocketChannel>> rooms;
   private final MessageBuilder messageBuilder;
 
-  private AsynchronousSocketChannel annotation;
+  private volatile AsynchronousSocketChannel annotation;
 
   public Server() throws IOException, InterruptedException, ExecutionException {
     logger.info("Start initialization of a server");
@@ -72,16 +72,15 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
   }
 
   public void  processPacket(ByteBuffer bf, AsynchronousSocketChannel source) {
-    ByteBuffer b = ByteBuffer.wrap(bf.array());
-    int room = b.getInt();
-    boolean isCommand = b.getInt() > 0;
-    b.rewind();
+    int room = bf.getInt();
+    boolean isCommand = bf.getInt() > 0;
+    bf.rewind();
 
     if (isCommand) {
       setAnnotation(source);
-      messageBuilder.acceptPacket(b);
+      messageBuilder.acceptPacket(bf);
     } else {
-      sendPacket(b, source, room);
+      sendPacket(bf, source, room);
     }
 //    synchronized (connections) {
 //      for (AsynchronousSocketChannel con : connections) {
@@ -103,8 +102,10 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
       try {
         Integer id = Integer.parseInt(substring.trim());
         synchronized (rooms) { // todo: should I???
-          List<AsynchronousSocketChannel> list = rooms.put(id, Collections.synchronizedList(new ArrayList<>()));
+          List<AsynchronousSocketChannel> list = new ArrayList<>();
           list.add(getAnnotation());
+          rooms.put(id, Collections.synchronizedList(list));
+//          rooms.put(id, Collections.synchronizedList(new ArrayList<>());  // todo: why returns null if used new ArrayList() ???
         }
         logger.info("Client {} registered room {}", getAnnotation(), id);
       } catch (RuntimeException e) {
@@ -134,7 +135,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     }
   }
 
-  private void sendPacket(ByteBuffer b, AsynchronousSocketChannel source, int room) {
+  private void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
 
     List<AsynchronousSocketChannel> roomMembers;
     synchronized (rooms) {
@@ -143,6 +144,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
 
     synchronized (roomMembers) { //TODO: IS IT LEGAL ???
       for (AsynchronousSocketChannel con : roomMembers) {
+        ByteBuffer b = bf.duplicate();
         if (con != source) {
           con.write(b, String.format("user%d room%d", connections.indexOf(con), room),
               new WriteHandler(this, con));
@@ -180,12 +182,29 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
   }
 
   @Override
-  public void setAnnotation(AsynchronousSocketChannel annotation) {
+  public synchronized void setAnnotation(AsynchronousSocketChannel annotation) {
     this.annotation = annotation;
   }
 
   @Override
   public AsynchronousSocketChannel getAnnotation() {
     return annotation;
+  }
+
+  public static ByteBuffer cloneByteBuffer(final ByteBuffer original) {
+    // Create clone with same capacity as original.
+    final ByteBuffer clone = (original.isDirect()) ?
+        ByteBuffer.allocateDirect(original.capacity()) :
+        ByteBuffer.allocate(original.capacity());
+
+    // Create a read-only copy of the original.
+    // This allows reading from the original without modifying it.
+    final ByteBuffer readOnlyCopy = original.asReadOnlyBuffer();
+
+    // Flip and read from the original.
+    readOnlyCopy.flip();
+    clone.put(readOnlyCopy);
+
+    return clone;
   }
 }

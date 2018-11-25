@@ -84,6 +84,7 @@ public class Packet {
     byte content[] = new byte[size];
     bf.get(content, FIELDS_SIZE, size - FIELDS_SIZE);
 
+    bf.rewind();
     logger.debug("Decoded packet id={} part={}, last={}, roomid={}", id, part, last, roomid);
     return new Packet(id, part, content, last, roomid, isCommand);
   }
