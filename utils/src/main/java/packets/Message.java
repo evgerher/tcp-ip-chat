@@ -11,15 +11,18 @@ public class Message {
 
   private final Packet[] packets;
   private final int room;
+  private final boolean isCommand;
 
-  public Message(byte bytes[], int room) {
+  public Message(byte bytes[], int room, boolean isCommand) {
     this.room = room;
-    packets = PacketFactory.generatePackets(bytes, room);
+    this.isCommand = isCommand;
+    packets = PacketFactory.generatePackets(bytes, room, isCommand);
   }
 
-  public Message(Packet[] packets, int room) {
+  public Message(Packet[] packets) {
+    this.isCommand = packets[0].isCommand();
+    this.room = packets[0].getRoomid();
     this.packets = packets;
-    this.room = room;
   }
 
   public Packet[] getPackets() {
@@ -47,5 +50,9 @@ public class Message {
   public String toString() {
     String s = String.format("%s :: room %d", new String(getContent()), room);
     return s;
+  }
+
+  public boolean isCommand() {
+    return isCommand;
   }
 }
