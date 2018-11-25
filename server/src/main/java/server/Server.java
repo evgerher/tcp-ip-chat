@@ -7,7 +7,6 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,31 +16,29 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import packets.Message;
-import packets.MessageAcceptor;
-import packets.MessageBuilder;
 import packets.Packet;
 import server.handlers.AcceptHandler;
 import server.handlers.ReadHandler;
 import server.handlers.WriteHandler;
 
-public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
+public class Server {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
+  public final static int INITIAL_ROOM = 0;
 
-  private final int INITIAL_ROOM = 0;
   private final AsynchronousServerSocketChannel listener;
-  private final List<AsynchronousSocketChannel> connections = Collections
-      .synchronizedList(new ArrayList<>());
+  private final CommandProcessor cmdProcessor;
+  private final List<AsynchronousSocketChannel> connections;
   private final Map<Integer, List<AsynchronousSocketChannel>> rooms;
-  private final MessageBuilder messageBuilder;
 
   private volatile AsynchronousSocketChannel annotation;
 
   public Server() throws IOException, InterruptedException, ExecutionException {
     logger.info("Start initialization of a server");
+    connections = Collections.synchronizedList(new ArrayList<>());
     ExecutorService threadPool = Executors.newFixedThreadPool(10); //TODO: what is it for?
     AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(threadPool);
-    messageBuilder = new MessageBuilder(this);
+
+    cmdProcessor = new CommandProcessor(this);
     rooms = initRooms();
 
     listener = AsynchronousServerSocketChannel.open(group);
@@ -61,7 +58,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     return rooms;
   }
 
-  private void addClientToRoom(AsynchronousSocketChannel client, Integer room) {
+  private void connectClientToRoom(AsynchronousSocketChannel client, Integer room) {
     synchronized (rooms) { //todo: should I?
       try {
         rooms.get(room).add(client);
@@ -77,8 +74,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     bf.rewind();
 
     if (isCommand) {
-      setAnnotation(source);
-      messageBuilder.acceptPacket(bf);
+      cmdProcessor.process(bf, source);
     } else {
       sendPacket(bf, source, room);
     }
@@ -93,50 +89,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
 //    }
   }
 
-  private void processCommand(Message message) {
-    String cmd = new String(message.getContent());
-    if (cmd.contains("/register")) { // todo: wtf, startsWith(..) does not work properly, equals(..) also, probably because of bytes internally
-      int len = "/register".length();
-      String substring = cmd.substring(cmd.indexOf("/register") + len, cmd.length());
-//      String substring = cmd.substring(len);
-      try {
-        Integer id = Integer.parseInt(substring.trim());
-        synchronized (rooms) { // todo: should I???
-          List<AsynchronousSocketChannel> list = new ArrayList<>();
-          list.add(getAnnotation());
-          rooms.put(id, Collections.synchronizedList(list));
-//          rooms.put(id, Collections.synchronizedList(new ArrayList<>());  // todo: why returns null if used new ArrayList() ???
-        }
-        logger.info("Client {} registered room {}", getAnnotation(), id);
-      } catch (RuntimeException e) {
-        e.printStackTrace();
-        logger.error("Register :: Could not parse integer for string [{}]", cmd); // todo: better message for logger
-      }
-    } else if (cmd.contains("/connect")) {
-      int len = "/connect".length();
-      String substring = cmd.substring(cmd.indexOf("/connect") + len, cmd.length());
-      try {
-        Integer id = Integer.parseInt(substring.trim());
-        synchronized (rooms) { // todo: should I???
-          List<AsynchronousSocketChannel> list = rooms.getOrDefault(id, null);
-          if (list != null) {
-            list.add(getAnnotation());
-            logger.info("Client {} connected to room {}", getAnnotation(), id);
-          }
-        else {
-            //todo: send message back !
-            logger.error("Room {} does not exist", id);
-          }
-        }
-      } catch (RuntimeException e) {
-        e.printStackTrace();
-        logger.error("Connect :: Could not parse integer for string [{}]", cmd); // todo: better message for logger
-      }
-    }
-  }
-
   private void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
-
     List<AsynchronousSocketChannel> roomMembers;
     synchronized (rooms) {
       roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???
@@ -154,15 +107,27 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     }
   }
 
-  public void addClient(AsynchronousSocketChannel cl) {
+  public void registerClient(AsynchronousSocketChannel cl) {
     synchronized (connections) { //todo: should I?
       connections.add(cl);
     }
-    addClientToRoom(cl, INITIAL_ROOM);
+    connectClientToRoom(cl, INITIAL_ROOM);
 
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
     ReadHandler rh = new ReadHandler(this, cl);
     cl.read(bf, bf, rh);
+  }
+
+  public void connectClientToRoom(AsynchronousSocketChannel cl, int room) {
+    List<AsynchronousSocketChannel> list = rooms.getOrDefault(room, null);
+    if (list != null) {
+      list.add(cl);
+      logger.info("Client {} connected to room {}", cl, room);
+    }
+    else {
+      //todo: send message back !
+      logger.error("Room {} does not exist", room);
+    }
   }
 
   public void removeClient(AsynchronousSocketChannel cl) {
@@ -174,37 +139,11 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     Thread.currentThread().join();
   }
 
-  @Override
-  public void acceptMessage(Message message) {
-    //todo: me
-    if (message.isCommand())
-      processCommand(message);
-  }
-
-  @Override
-  public synchronized void setAnnotation(AsynchronousSocketChannel annotation) {
-    this.annotation = annotation;
-  }
-
-  @Override
-  public AsynchronousSocketChannel getAnnotation() {
-    return annotation;
-  }
-
-  public static ByteBuffer cloneByteBuffer(final ByteBuffer original) {
-    // Create clone with same capacity as original.
-    final ByteBuffer clone = (original.isDirect()) ?
-        ByteBuffer.allocateDirect(original.capacity()) :
-        ByteBuffer.allocate(original.capacity());
-
-    // Create a read-only copy of the original.
-    // This allows reading from the original without modifying it.
-    final ByteBuffer readOnlyCopy = original.asReadOnlyBuffer();
-
-    // Flip and read from the original.
-    readOnlyCopy.flip();
-    clone.put(readOnlyCopy);
-
-    return clone;
+  public void registerRoom(Integer id) {
+    synchronized (rooms) { // todo: should I???
+      rooms.put(id, Collections.synchronizedList(new ArrayList<>()));
+//          rooms.put(id, Collections.synchronizedList(new ArrayList<>());  // todo: why returns null if used new ArrayList() ???
+      logger.info("Registered room {}", id);
+    }
   }
 }
