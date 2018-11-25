@@ -45,7 +45,8 @@ public class MessageProcessor implements MessageAcceptor {
 
     } else if (content.startsWith("/room")) { // Change message destination to specified room (int)
       int len = "/room".length(); // todo: make consts
-      String number = content.substring(len);
+      String number = content.substring(content.indexOf("/room") + len);
+      number = number.trim();
       try {
         Integer id = Integer.parseInt(number);
         roomid = id;
@@ -80,5 +81,15 @@ public class MessageProcessor implements MessageAcceptor {
   @Override
   public void acceptMessage(Message message) {
     client.acceptMessage(message); //todo: wtf
+  }
+
+  @Override
+  public void setAnnotation(Object annotation) {
+    // todo: me
+  }
+
+  @Override
+  public Object getAnnotation() {
+    return null;
   }
 }

@@ -7,6 +7,7 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,7 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
     b.rewind();
 
     if (isCommand) {
+      setAnnotation(source);
       messageBuilder.acceptPacket(b);
     } else {
       sendPacket(b, source, room);
@@ -94,29 +96,33 @@ public class Server implements MessageAcceptor<AsynchronousSocketChannel> {
 
   private void processCommand(Message message) {
     String cmd = new String(message.getContent());
-    if (cmd.startsWith("/register")) {
+    if (cmd.contains("/register")) { // todo: wtf, startsWith(..) does not work properly, equals(..) also, probably because of bytes internally
       int len = "/register".length();
-      String substring = cmd.substring(len);
+      String substring = cmd.substring(cmd.indexOf("/register") + len, cmd.length());
+//      String substring = cmd.substring(len);
       try {
-        Integer id = Integer.parseInt(substring);
+        Integer id = Integer.parseInt(substring.trim());
         synchronized (rooms) { // todo: should I???
           List<AsynchronousSocketChannel> list = rooms.put(id, Collections.synchronizedList(new ArrayList<>()));
           list.add(getAnnotation());
         }
+        logger.info("Client {} registered room {}", getAnnotation(), id);
       } catch (RuntimeException e) {
         e.printStackTrace();
         logger.error("Register :: Could not parse integer for string [{}]", cmd); // todo: better message for logger
       }
-    } else if (cmd.startsWith("/connect")) {
+    } else if (cmd.contains("/connect")) {
       int len = "/connect".length();
-      String substring = cmd.substring(len);
+      String substring = cmd.substring(cmd.indexOf("/connect") + len, cmd.length());
       try {
-        Integer id = Integer.parseInt(substring);
+        Integer id = Integer.parseInt(substring.trim());
         synchronized (rooms) { // todo: should I???
           List<AsynchronousSocketChannel> list = rooms.getOrDefault(id, null);
-          if (list != null)
+          if (list != null) {
             list.add(getAnnotation());
-          else {
+            logger.info("Client {} connected to room {}", getAnnotation(), id);
+          }
+        else {
             //todo: send message back !
             logger.error("Room {} does not exist", id);
           }

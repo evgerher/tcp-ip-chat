@@ -18,7 +18,7 @@ public class PacketsTest {
           + "Duis nec leo ex. Mauris convallis viverra amet.";
       final int length = 500;
 
-      Packet[] packets = PacketFactory.generatePackets(msg.getBytes(), 0);
+      Packet[] packets = PacketFactory.generatePackets(msg.getBytes(), 0, false);
       final int expectedAmount = 3;
       Assert.assertEquals(expectedAmount, packets.length);
 
@@ -39,10 +39,10 @@ public class PacketsTest {
         + "arcu ipsum at arcu. Vivamus id.";
     final String msg10 = "Lorem ipsu";
 
-    Packet[] packets1 = PacketFactory.generatePackets(msg240.getBytes(), 0);
+    Packet[] packets1 = PacketFactory.generatePackets(msg240.getBytes(), 0, false);
     Assert.assertEquals(1, packets1.length);
 
-    Packet[] packets2 = PacketFactory.generatePackets(msg10.getBytes(), 0);
+    Packet[] packets2 = PacketFactory.generatePackets(msg10.getBytes(), 0, false);
     Assert.assertEquals(1, packets2.length);
   }
 
@@ -53,7 +53,7 @@ public class PacketsTest {
     final int size = 138;
     final int expectedLength = 1;
 
-    Packet[] packets = PacketFactory.generatePackets(msg.getBytes(), 0);
+    Packet[] packets = PacketFactory.generatePackets(msg.getBytes(), 0, false);
     Assert.assertEquals(expectedLength, packets.length);
 
     Packet packet = packets[0];
