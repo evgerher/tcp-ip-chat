@@ -9,19 +9,28 @@ import org.slf4j.LoggerFactory;
 public class Message {
   private static final Logger logger = LoggerFactory.getLogger(Message.class);
 
-  private Packet[] packets;
-  private byte[] content;
+  private final Packet[] packets;
+  private final int room;
+  private final boolean isCommand;
 
-  public Message(byte bytes[]) {
-    packets = PacketFactory.generatePackets(bytes);
+  public Message(byte bytes[], int room, boolean isCommand) {
+    this.room = room;
+    this.isCommand = isCommand;
+    packets = PacketFactory.generatePackets(bytes, room, isCommand);
   }
 
   public Message(Packet[] packets) {
+    this.isCommand = packets[0].isCommand();
+    this.room = packets[0].getRoomid();
     this.packets = packets;
   }
 
   public Packet[] getPackets() {
     return packets;
+  }
+
+  public int getRoom() {
+    return room;
   }
 
   public byte[] getContent() {  // TODO: REMOVE EXCEPTION
@@ -31,7 +40,7 @@ public class Message {
         os.write(p.getContent());
       }
     } catch (Exception e) {
-      logger.error("Panic");
+      logger.error(e.toString());
     }
 
     return os.toByteArray();
@@ -39,6 +48,11 @@ public class Message {
 
   @Override
   public String toString() {
-    return new String(getContent());
+    String s = String.format("%s :: room %d", new String(getContent()), room);
+    return s;
+  }
+
+  public boolean isCommand() {
+    return isCommand;
   }
 }

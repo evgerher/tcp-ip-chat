@@ -1,33 +1,52 @@
 package packets;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MessageBuilder {
   private Message message;
-  List<Packet> packetList; // Reimplement because messages may come from different chats
-  private boolean finished;
+  private Map<Integer, List<Packet>> roomPackets;
+  private final MessageAcceptor acceptor;
 
-  public MessageBuilder() {
-    finished = false;
-    packetList = new LinkedList<>();
+  public MessageBuilder(MessageAcceptor acceptor) {
+    roomPackets = new ConcurrentHashMap<>();
+    this.acceptor = acceptor;
   }
 
-  public void acceptBytes(ByteBuffer bf) {  // Reimplement in order to work with different chats
+  public synchronized void acceptPacket(ByteBuffer bf) {  // Reimplement in order to work with different chats
     Packet packet = Packet.decode(bf);
-    packetList.add(packet);
-    if (packet.isLast()) {
-      finished = true;
-      Packet[] packets = new Packet[packetList.size()];
-      packets = packetList.toArray(packets);
+    storePacket(packet);
+    boolean last = packet.isLast();
 
-      message = new Message(packets);
+    if (last) {
+      int roomid = packet.getRoomid();
+      message = buildMessage(roomPackets.get(roomid), roomid);
+      acceptor.acceptMessage(message);
     }
   }
 
-  public boolean isConstructed() {
-    return finished;
+  private Message buildMessage(List<Packet> packetList, int roomid) {
+    List<Packet> roomList = roomPackets.remove(roomid);
+    Packet[] packets = new Packet[roomList.size()];
+    packets = packetList.toArray(packets);
+
+    return new Message(packets);
+  }
+
+  private void storePacket(Packet packet) {
+    int roomid = packet.getRoomid();
+
+    List<Packet> roomContainer = roomPackets.getOrDefault(roomid, null);
+    if (roomContainer == null) {
+      roomContainer = new ArrayList<>();
+      roomPackets.put(roomid, roomContainer);
+    }
+
+    roomContainer.add(packet);
   }
 
   public Message getMessage() {

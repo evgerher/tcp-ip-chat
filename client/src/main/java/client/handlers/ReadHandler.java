@@ -1,5 +1,6 @@
-package client;
+package client.handlers;
 
+import client.Client;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -11,14 +12,12 @@ import packets.Packet;
 public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
   private static final Logger logger = LoggerFactory.getLogger(ReadHandler.class);
 
-  private final Client client;
+  private final MessageBuilder builder;
   private final AsynchronousSocketChannel socket;
-  private MessageBuilder builder;
 
-  public ReadHandler(AsynchronousSocketChannel socket, Client client) {
+  public ReadHandler(AsynchronousSocketChannel socket, MessageBuilder builder) {
     this.socket = socket;
-    this.client = client;
-    builder = new MessageBuilder();
+    this.builder = builder;
   }
 
   @Override
@@ -29,12 +28,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     socket.read(bf, bf, this);
 
     attachment.rewind();
-    builder.acceptBytes(attachment);
-
-    if (builder.isConstructed()) {
-      client.acceptMessage(builder.getMessage());
-      builder = new MessageBuilder(); // todo: make somekind of reinitialization instead
-    }
+    builder.acceptPacket(attachment);
   }
 
   @Override

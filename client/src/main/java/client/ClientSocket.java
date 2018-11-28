@@ -1,5 +1,7 @@
 package client;
 
+import client.handlers.MessageProcessor;
+import client.handlers.ReadHandler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -14,12 +16,12 @@ public class ClientSocket extends Thread {
   private static final Logger logger = LoggerFactory.getLogger(ClientSocket.class);
   private Future<Void> connection;
 
-  private final Client client;
+  private final MessageProcessor messageProcessor;
   private AsynchronousSocketChannel channel;
   private boolean closed;
 
-  public ClientSocket(Client client) throws IOException, InterruptedException, ExecutionException {
-    this.client = client;
+  public ClientSocket(MessageProcessor mprocessor) throws IOException, InterruptedException, ExecutionException {
+    this.messageProcessor = mprocessor;
     closed = false;
 
     logger.info("Client starts to establish connection");
@@ -47,7 +49,8 @@ public class ClientSocket extends Thread {
   @Override
   public void run() {
     ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-    channel.read(bf, bf, new ReadHandler(channel, client));
+    MessageBuilder builder = new MessageBuilder(messageProcessor);
+    channel.read(bf, bf, new ReadHandler(channel, builder));
     try {
       Thread.currentThread().join();
     } catch (InterruptedException e) {

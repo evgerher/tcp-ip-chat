@@ -21,7 +21,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
   public void completed(AsynchronousSocketChannel socketChannel, Void arg1) {
     logger.info("client connected: {}", socketChannel);
     listener.accept(null, this);
-    server.addClient(socketChannel);
+    server.registerClient(socketChannel);
     logger.info("Successfully connected");
   }
 

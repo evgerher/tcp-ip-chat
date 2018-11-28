@@ -25,7 +25,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     socket.read(bf, bf, this);
 
     attachment.flip();
-    server.sendMessages(attachment, socket);
+    server.processPacket(attachment, socket);
   }
 
   @Override

@@ -19,12 +19,6 @@ public class WriteHandler implements CompletionHandler<Integer, String> {
 
   @Override
   public void completed(Integer result, String attachment) {
-//    attachment.flip();
-//    server.sendMessages(attachment);
-//    attachment.clear();
-//
-//    ByteBuffer bf = ByteBuffer.allocate(Packet.PACKET_SIZE);
-//    socket.read(bf, bf, new ReadHandler(server, socket));
     logger.info("Successfully sent message to {}", attachment);
   }
 
