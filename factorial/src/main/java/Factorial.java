@@ -1,6 +1,9 @@
 import command.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Factorial implements Command {
+  private static final Logger logger = LoggerFactory.getLogger(Factorial.class);
 
   @Override
   public String getKeyword() {
@@ -9,9 +12,15 @@ public class Factorial implements Command {
 
   @Override
   public String executeCommand(String... parameters) {
-    Integer value = Integer.parseInt(parameters[0]);
-    Integer fact = factorial(value);
-    return fact.toString();
+    try {
+      logger.info("Executing command with value {}", parameters[0]);
+      Integer value = Integer.parseInt(parameters[0]);
+      Integer fact = factorial(value);
+      return fact.toString();
+    } catch (RuntimeException e) {
+      logger.error("Unable to read integer from first parameter {}", parameters[0]);
+      return null;
+    }
   }
 
   private Integer factorial(Integer value) {

@@ -32,7 +32,7 @@ public class Server {
 
   private volatile AsynchronousSocketChannel annotation;
 
-  public Server() throws IOException, InterruptedException, ExecutionException {
+  public Server() throws IOException {
     logger.info("Start initialization of a server");
     connections = Collections.synchronizedList(new ArrayList<>());
     ExecutorService threadPool = Executors.newFixedThreadPool(10); //TODO: what is it for?
@@ -58,16 +58,6 @@ public class Server {
     return rooms;
   }
 
-  private void connectClientToRoom(AsynchronousSocketChannel client, Integer room) {
-    synchronized (rooms) { //todo: should I?
-      try {
-        rooms.get(room).add(client);
-      } catch (RuntimeException e) {
-        logger.error("No room by requested id");
-      }
-    }
-  }
-
   public void  processPacket(ByteBuffer bf, AsynchronousSocketChannel source) {
     int room = bf.getInt();
     boolean isCommand = bf.getInt() > 0;
@@ -78,7 +68,7 @@ public class Server {
     } else {
       sendPacket(bf, source, room);
     }
-//    synchronized (connections) {
+//    synchronized (connections) { // This code sends messages to everyone
 //      for (AsynchronousSocketChannel con : connections) {
 //        if (con != source) {
 //          ByteBuffer b = ByteBuffer.wrap(bf.array()); // Better to use copy, because some magic happens and ByteBuffer object contains wrong data

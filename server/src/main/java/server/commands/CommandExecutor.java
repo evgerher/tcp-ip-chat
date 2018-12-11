@@ -22,8 +22,9 @@ public class CommandExecutor {
 
   private String commandsPath;
 
-  public CommandExecutor(String commandsPath) {
-    this.commandsPath = commandsPath;
+  public CommandExecutor() {
+    String path = CommandExecutor.class.getClassLoader().getResource("nani.txt").getPath();
+    this.commandsPath = path.substring(0, path.lastIndexOf("nani.txt")) + "jars/";
   }
 
   private List<Pair<String, String>> getCommandsList() {
@@ -41,7 +42,7 @@ public class CommandExecutor {
             res.add(new Pair<>(keyword, description));
           } catch (InstantiationException | IllegalAccessException
               | InvocationTargetException | NoSuchMethodException e) {
-            logger.error("loading interface for /help command: " + e.getMessage());
+            logger.error("Error loading interface for /help command: " + e.getMessage());
           }
         }
       }
