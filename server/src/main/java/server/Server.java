@@ -11,12 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Packet;
+import server.command.CommandProcessor;
 import server.handlers.AcceptHandler;
 import server.handlers.ReadHandler;
 import server.handlers.WriteHandler;
@@ -79,7 +79,13 @@ public class Server {
 //    }
   }
 
-  private void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
+  public void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
+    if (room == -1) {
+      source.write(bf.duplicate(), String.format("Send to user=%s response for command",
+          connections.indexOf(source)), new WriteHandler(this, source));
+      return;
+    }
+
     List<AsynchronousSocketChannel> roomMembers;
     synchronized (rooms) {
       roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???

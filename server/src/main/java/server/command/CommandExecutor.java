@@ -1,4 +1,4 @@
-package server.commands;
+package server.command;
 
 import command.Command;
 import java.io.File;

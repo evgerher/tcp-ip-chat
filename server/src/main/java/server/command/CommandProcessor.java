@@ -1,4 +1,4 @@
-package server;
+package server.command;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import packets.Message;
 import packets.MessageAcceptor;
 import packets.MessageBuilder;
-import server.commands.CommandExecutor;
+import packets.Packet;
+import packets.PacketFactory;
+import server.Server;
 
 public class CommandProcessor implements MessageAcceptor<AsynchronousSocketChannel> {
   private static final Logger logger = LoggerFactory.getLogger(CommandProcessor.class);
@@ -28,7 +30,7 @@ public class CommandProcessor implements MessageAcceptor<AsynchronousSocketChann
   public void acceptMessage(Message message) {
     //todo: me
     if (message.isCommand())
-      processCommand(message);
+      processCommand(message, getAnnotation());
   }
 
   @Override
@@ -41,7 +43,7 @@ public class CommandProcessor implements MessageAcceptor<AsynchronousSocketChann
     return annotation;
   }
 
-  private void processCommand(Message message) {
+  private void processCommand(Message message, AsynchronousSocketChannel source) {
     String cmd = new String(message.getContent());
     logger.info("New cmd :: {}", cmd);
     if (cmd.contains("/register")) { // todo: wtf, startsWith(..) does not work properly, equals(..) also, probably because of bytes internally
@@ -71,11 +73,19 @@ public class CommandProcessor implements MessageAcceptor<AsynchronousSocketChann
       String param = words[1];
       logger.info("Start to execute command /fact");
       String result = commandExecutor.executeCommand("factorial", param);
+      respond(result, source);
     }
   }
 
   public void process(ByteBuffer bf, AsynchronousSocketChannel source) {
     setAnnotation(source);
     messageBuilder.acceptPacket(bf);
+  }
+
+  private void respond(String content, AsynchronousSocketChannel target) {
+    Packet[] packets = PacketFactory.generatePackets(content.getBytes(), -1, false);
+
+    for (Packet p: packets)
+      server.sendPacket(p.byteBuffer(), target, -1);
   }
 }
