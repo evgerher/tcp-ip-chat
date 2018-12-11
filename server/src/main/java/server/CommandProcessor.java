@@ -47,7 +47,6 @@ public class CommandProcessor implements MessageAcceptor<AsynchronousSocketChann
     if (cmd.contains("/register")) { // todo: wtf, startsWith(..) does not work properly, equals(..) also, probably because of bytes internally
       int len = "/register".length();
       String substring = cmd.substring(cmd.indexOf("/register") + len);
-//      String substring = cmd.substring(len);
       try {
         Integer id = Integer.parseInt(substring.trim());
         server.registerRoom(id);

@@ -60,7 +60,7 @@ public class CommandExecutor {
     return result.toString();
   }
 
-  public String executeCommand(String keyword, String parameters) {
+  public String executeCommand(String keyword, String... parameters) {
     if (keyword.equals("help")) {
       return getHelp();
     }
@@ -74,8 +74,8 @@ public class CommandExecutor {
                 (String) methodK.invoke(someClass.newInstance(), null);
 
             if (currentKeyword.equals(keyword)) {
-              Method methodE = someClass.getDeclaredMethod("executeCommand", String.class);
-              return (String) methodE.invoke(someClass.newInstance(), parameters);
+              Method methodE = someClass.getDeclaredMethod("executeCommand", String[].class);
+              return (String) methodE.invoke(someClass.newInstance(), new Object[] {parameters});
             }
           } catch (InstantiationException | IllegalAccessException
               | InvocationTargetException | NoSuchMethodException e) {
