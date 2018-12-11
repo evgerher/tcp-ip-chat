@@ -2,6 +2,7 @@ package client.handlers;
 
 import client.Client;
 import client.ClientSocket;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,14 @@ public class MessageProcessor implements MessageAcceptor {
   }
 
   private void parseCommand(String content) {
-    if (content.startsWith("!stop")) {
-
+    if (content.startsWith("/stop")) {
+      try {
+        logger.info("Closing connection");
+        connection.close();
+      } catch (IOException e) {
+        logger.error("Unable to close client socket, {}", e.toString());
+        System.exit(1);
+      }
     } else if (content.startsWith("/room")) { // Change message destination to specified room (int)
       int len = "/room".length(); // todo: make consts
       String number = content.substring(content.indexOf("/room") + len);

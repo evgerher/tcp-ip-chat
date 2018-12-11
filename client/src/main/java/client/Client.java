@@ -1,6 +1,7 @@
 package client;
 
 import client.handlers.MessageProcessor;
+import java.io.IOException;
 import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,9 +10,6 @@ import packets.Message;
 public class Client {
   private static final Logger logger = LoggerFactory.getLogger(Client.class);
   private final MessageProcessor messageProcessor;
-  private int roomid;
-
-  private ClientSocket connection;
 
   public Client() {
     messageProcessor = new MessageProcessor(this);
@@ -32,8 +30,9 @@ public class Client {
     Scanner sc = new Scanner(System.in);
     while (!stop) {
       String s = sc.nextLine();
-      if (s.equals("!stop"))
+      if (s.startsWith("/stop")) {
         stop = true;
+      }
       cl.sendMessage(s);
     }
   }

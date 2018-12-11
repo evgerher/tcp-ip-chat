@@ -1,6 +1,5 @@
 package client.handlers;
 
-import client.Client;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -33,6 +32,6 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
   @Override
   public void failed(Throwable exc, ByteBuffer attachment) {
-    logger.error("Error during reading handling");
+    logger.error("Error during reading handling, {}", exc.toString());
   }
 }
