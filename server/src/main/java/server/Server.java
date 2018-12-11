@@ -11,12 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import packets.Packet;
+import server.command.CommandProcessor;
 import server.handlers.AcceptHandler;
 import server.handlers.ReadHandler;
 import server.handlers.WriteHandler;
@@ -32,7 +32,7 @@ public class Server {
 
   private volatile AsynchronousSocketChannel annotation;
 
-  public Server() throws IOException, InterruptedException, ExecutionException {
+  public Server() throws IOException {
     logger.info("Start initialization of a server");
     connections = Collections.synchronizedList(new ArrayList<>());
     ExecutorService threadPool = Executors.newFixedThreadPool(10); //TODO: what is it for?
@@ -58,16 +58,6 @@ public class Server {
     return rooms;
   }
 
-  private void connectClientToRoom(AsynchronousSocketChannel client, Integer room) {
-    synchronized (rooms) { //todo: should I?
-      try {
-        rooms.get(room).add(client);
-      } catch (RuntimeException e) {
-        logger.error("No room by requested id");
-      }
-    }
-  }
-
   public void  processPacket(ByteBuffer bf, AsynchronousSocketChannel source) {
     int room = bf.getInt();
     boolean isCommand = bf.getInt() > 0;
@@ -78,7 +68,7 @@ public class Server {
     } else {
       sendPacket(bf, source, room);
     }
-//    synchronized (connections) {
+//    synchronized (connections) { // This code sends messages to everyone
 //      for (AsynchronousSocketChannel con : connections) {
 //        if (con != source) {
 //          ByteBuffer b = ByteBuffer.wrap(bf.array()); // Better to use copy, because some magic happens and ByteBuffer object contains wrong data
@@ -89,7 +79,13 @@ public class Server {
 //    }
   }
 
-  private void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
+  public void sendPacket(ByteBuffer bf, AsynchronousSocketChannel source, int room) {
+    if (room == -1) {
+      source.write(bf.duplicate(), String.format("Send to user=%s response for command",
+          connections.indexOf(source)), new WriteHandler(this, source));
+      return;
+    }
+
     List<AsynchronousSocketChannel> roomMembers;
     synchronized (rooms) {
       roomMembers = rooms.get(room); //TODO: IS IT LEGAL ???

@@ -36,7 +36,7 @@ public class ClientSocket extends Thread {
 
     for (Packet p: packets) {
       ByteBuffer bf = p.byteBuffer();
-      Future<Integer> writeResult  = channel.write(bf);
+      Future<Integer> writeResult  = channel.write(bf); // todo: refactor to async call
       logger.info("write result code [{}]", writeResult.get());
     }
   }

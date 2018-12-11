@@ -42,6 +42,7 @@ public class MessageProcessor implements MessageAcceptor {
   }
 
   private void parseCommand(String content) {
+    logger.info("{} command used", content);
     if (content.startsWith("/stop")) {
       try {
         logger.info("Closing connection");
@@ -57,14 +58,19 @@ public class MessageProcessor implements MessageAcceptor {
       try {
         Integer id = Integer.parseInt(number);
         roomid = id;
-        logger.info("/room {} command used", roomid);
       } catch (RuntimeException e) {
         logger.error("Room :: Could not parse roomid from [{}]", content);
       }
     } else if (content.startsWith("/register") || content.startsWith("/connect")) { // register on a new room on a server (int)
       try {
         sendCommand(content);
-        logger.info("{} command used", content);
+      } catch (RuntimeException e) {
+        e.printStackTrace();
+        logger.error("Register or Connect :: Could not parse roomid from [{}]", content);
+      }
+    } else if (content.startsWith("/fact")) {
+      try {
+        sendCommand(content);
       } catch (RuntimeException e) {
         e.printStackTrace();
         logger.error("Register or Connect :: Could not parse roomid from [{}]", content);
