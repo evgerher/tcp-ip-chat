@@ -21,6 +21,7 @@
     <module>client</module>
     <module>server</module>
     <module>utils</module>
+    <module>factorial</module>
   </modules>
 
   <dependencies>
